@@ -10,7 +10,7 @@ from flexio.flexio import FlexBinaryIO, FlexTextIO
 from tests.conftest import case_name
 
 Case = namedtuple('CaseMakeReal',
-                  'FlexIoCls,binary,content,w_content,path,fd,init,mode,close_fp,close_fd,exc,raises,name')
+                  'FlexIoCls,binary,content,w_content,path,fd,init,mode,close_io,close_fd,exc,raises,name')
 
 
 @pytest.fixture(scope='function')
@@ -39,7 +39,7 @@ def real_case(request, fake_local_file, faker):
         fd=None,
         mode=meta.mode,
         init=None,
-        close_fp=meta.close_fp,
+        close_io=meta.close_io,
         close_fd=None,
         exc=meta.exc,
         raises=meta.raises,
@@ -69,7 +69,7 @@ def path_case(request, fake_local_file, faker):
         fd=None,
         mode=meta.mode,
         init=None,
-        close_fp=meta.close_fp,
+        close_io=meta.close_io,
         close_fd=None,
         exc=meta.exc,
         raises=meta.raises,
@@ -99,7 +99,7 @@ def mem_case(request, faker):
         fd=None,
         mode=meta.mode,
         init=init,
-        close_fp=meta.close_fp,
+        close_io=meta.close_io,
         close_fd=None,
         exc=meta.exc,
         raises=meta.raises,
@@ -131,7 +131,7 @@ def fd_case(request, fake_local_file, faker):
             fd=f.fileno(),
             mode=meta.mode,
             init=None,
-            close_fp=meta.close_fp,
+            close_io=meta.close_io,
             close_fd=meta.close_fd,
             exc=meta.exc,
             raises=meta.raises,
@@ -145,80 +145,80 @@ def fd_case(request, fake_local_file, faker):
 
 class TestFlexIo:
     MRMeta = namedtuple('MetaMakeReal',
-                        'exists,binary,mode,close_fp,exc,raises,name')
+                        'exists,binary,mode,close_io,exc,raises,name')
 
     cases = [
         # text existing
         MRMeta(name='read text existing',
-               exists=True, binary=False, mode='rt', close_fp=False, exc=None,
+               exists=True, binary=False, mode='rt', close_io=False, exc=None,
                raises=None),
         MRMeta(name='read existing',
-               exists=True, binary=False, mode='r', close_fp=False, exc=None,
+               exists=True, binary=False, mode='r', close_io=False, exc=None,
                raises=None),
         MRMeta(name='write text existing',
-               exists=True, binary=False, mode='wt', close_fp=False, exc=None,
+               exists=True, binary=False, mode='wt', close_io=False, exc=None,
                raises=None),
         MRMeta(name='write existing',
-               exists=True, binary=False, mode='w', close_fp=False, exc=None,
+               exists=True, binary=False, mode='w', close_io=False, exc=None,
                raises=None),
         MRMeta(name='write+ text existing',
-               exists=True, binary=False, mode='wt+', close_fp=False, exc=None,
+               exists=True, binary=False, mode='wt+', close_io=False, exc=None,
                raises=None),
         MRMeta(name='write+ existing',
-               exists=True, binary=False, mode='w+', close_fp=False, exc=None,
+               exists=True, binary=False, mode='w+', close_io=False, exc=None,
                raises=None),
 
         # text non-existing
         MRMeta(name='read text',
-               exists=False, binary=False, mode='rt', close_fp=False,
+               exists=False, binary=False, mode='rt', close_io=False,
                exc=FileNotFoundError,
                raises=dict()),
         MRMeta(name='read',
-               exists=False, binary=False, mode='r', close_fp=False,
+               exists=False, binary=False, mode='r', close_io=False,
                exc=FileNotFoundError,
                raises=dict()),
         MRMeta(name='write text',
-               exists=False, binary=False, mode='wt', close_fp=False, exc=None,
+               exists=False, binary=False, mode='wt', close_io=False, exc=None,
                raises=None),
         MRMeta(name='write',
-               exists=False, binary=False, mode='w', close_fp=False, exc=None,
+               exists=False, binary=False, mode='w', close_io=False, exc=None,
                raises=None),
         MRMeta(name='write+ text',
-               exists=False, binary=False, mode='wt+', close_fp=False, exc=None,
+               exists=False, binary=False, mode='wt+', close_io=False, exc=None,
                raises=None),
         MRMeta(name='write+',
-               exists=False, binary=False, mode='w+', close_fp=False, exc=None,
+               exists=False, binary=False, mode='w+', close_io=False, exc=None,
                raises=None),
 
         # binary existing
         MRMeta(name='read binary existing',
-               exists=True, binary=True, mode='rb', close_fp=False, exc=None,
+               exists=True, binary=True, mode='rb', close_io=False, exc=None,
                raises=None),
         MRMeta(name='write binary existing',
-               exists=True, binary=True, mode='wb', close_fp=False, exc=None,
+               exists=True, binary=True, mode='wb', close_io=False, exc=None,
                raises=None),
         MRMeta(name='write+ binary existing',
-               exists=True, binary=True, mode='wb+', close_fp=False, exc=None,
+               exists=True, binary=True, mode='wb+', close_io=False, exc=None,
                raises=None),
 
         # binary non-existing
         MRMeta(name='read binary',
-               exists=False, binary=True, mode='rb', close_fp=False,
+               exists=False, binary=True, mode='rb', close_io=False,
                exc=FileNotFoundError,
                raises=dict()),
         MRMeta(name='write binary',
-               exists=False, binary=True, mode='wb', close_fp=False, exc=None,
+               exists=False, binary=True, mode='wb', close_io=False, exc=None,
                raises=None),
         MRMeta(name='write+ binary',
-               exists=False, binary=True, mode='wb+', close_fp=False, exc=None,
+               exists=False, binary=True, mode='wb+', close_io=False, exc=None,
                raises=None),
 
         # incorrect usages
         MRMeta(name='write bytes to text io',
-               exists=True, binary=True, mode='w', close_fp=False,
+               exists=True, binary=True, mode='w', close_io=False,
                exc=TypeError, raises=dict(match='must be str')),
         MRMeta(name='write text to bytes io',
-               exists=True, binary=False, mode='wb', close_fp=False,
+               exists=True, binary=False, mode='wb', close_io=False,
                exc=TypeError,
                raises=dict(match='bytes-like object is required')),
     ]
@@ -230,11 +230,12 @@ class TestFlexIo:
         with pytest.raises(case.exc, **case.raises) \
                 if case.exc else contextlib.nullcontext():
             with case.path.open(mode=case.mode) as f:
-                with case.FlexIoCls(f, close_fp=case.close_fp) as io:
+                with case.FlexIoCls(f, close_io=case.close_io) as io:
                     common_test_flexio(io, case.mode, case.content,
                                        case.w_content)
 
-                assert io.closed == case.close_fp
+                assert io.closed == (
+                    False if case.close_io is None else case.close_io)
                 assert set(io.mode) == refactor_mode_as_open(case.mode)
                 assert io.name == str(case.path)
                 assert io.in_mem == False
@@ -248,39 +249,40 @@ class TestFlexIo:
         with pytest.raises(case.exc, **case.raises) \
                 if case.exc else contextlib.nullcontext():
             with case.FlexIoCls(case.path, mode=case.mode,
-                                close_fp=case.close_fp) as io:
+                                close_io=case.close_io) as io:
                 common_test_flexio(io, case.mode, case.content, case.w_content)
 
-            assert io.closed == True
+            assert io.closed == (
+                True if case.close_io is None else case.close_io)
             assert set(io.mode) == refactor_mode_as_open(case.mode)
             assert io.name == str(case.path)
             assert io.in_mem == False
 
     MPMeta = namedtuple('MetaMakeVariousPath',
-                        'path_cls,binary,mode,close_fp,exc,raises,name')
+                        'path_cls,binary,mode,close_io,exc,raises,name')
     cases = [
         # text
         MPMeta(name='write+ None',
-               path_cls=str, binary=False, mode='wt+', close_fp=False, exc=None,
+               path_cls=str, binary=False, mode='wt+', close_io=False, exc=None,
                raises=None),
         MPMeta(name='write+ empty string',
-               path_cls=bytes, binary=False, mode='wt+', close_fp=False,
+               path_cls=bytes, binary=False, mode='wt+', close_io=False,
                exc=None,
                raises=None),
         MPMeta(name='write+ initial string',
-               path_cls=pathlib.Path, binary=False, mode='wt+', close_fp=False,
+               path_cls=pathlib.Path, binary=False, mode='wt+', close_io=False,
                exc=None, raises=None),
 
         # binary
         MPMeta(name='write+ None bytes',
-               path_cls=str, binary=True, mode='wb+', close_fp=False, exc=None,
+               path_cls=str, binary=True, mode='wb+', close_io=False, exc=None,
                raises=None),
         MPMeta(name='write+ empty bytes',
-               path_cls=bytes, binary=True, mode='wb+', close_fp=False,
+               path_cls=bytes, binary=True, mode='wb+', close_io=False,
                exc=None,
                raises=None),
         MPMeta(name='write+ initial bytes',
-               path_cls=pathlib.Path, binary=True, mode='wb+', close_fp=False,
+               path_cls=pathlib.Path, binary=True, mode='wb+', close_io=False,
                exc=None, raises=None),
     ]
 
@@ -291,37 +293,38 @@ class TestFlexIo:
         with pytest.raises(case.exc, **case.raises) \
                 if case.exc else contextlib.nullcontext():
             with case.FlexIoCls(case.path, mode=case.mode,
-                                close_fp=case.close_fp) as io:
+                                close_io=case.close_io) as io:
                 common_test_flexio(io, case.mode, case.content, case.w_content)
 
-            assert io.closed == True
+            assert io.closed == (
+                True if case.close_io is None else case.close_io)
             assert set(io.mode) == refactor_mode_as_open(case.mode)
             assert str(io.name) == str(case.path)
             assert io.in_mem == False
 
     MDMeta = namedtuple('MetaMakeFd',
-                        'binary,mode,close_fd,close_fp,exc,raises,name')
+                        'binary,mode,close_fd,close_io,exc,raises,name')
     cases = [
         # text
-        MDMeta(name='text not-close_fd close_fp',
-               binary=False, mode='w+', close_fd=False, close_fp=True, exc=None,
+        MDMeta(name='text not-close_fd close_io',
+               binary=False, mode='w+', close_fd=False, close_io=True, exc=None,
                raises=None),
-        MDMeta(name='text close_fd not-close_fp',
-               binary=False, mode='w+', close_fd=True, close_fp=False, exc=None,
+        MDMeta(name='text close_fd not-close_io',
+               binary=False, mode='w+', close_fd=True, close_io=False, exc=None,
                raises=None),
-        MDMeta(name='text close_fd close_fp',
-               binary=False, mode='w+', close_fd=True, close_fp=True, exc=None,
+        MDMeta(name='text close_fd close_io',
+               binary=False, mode='w+', close_fd=True, close_io=True, exc=None,
                raises=None),
 
         # binary
-        MDMeta(name='binary not-close_fd close_fp',
-               binary=True, mode='wb+', close_fd=False, close_fp=True, exc=None,
+        MDMeta(name='binary not-close_fd close_io',
+               binary=True, mode='wb+', close_fd=False, close_io=True, exc=None,
                raises=None),
-        MDMeta(name='binary close_fd not-close_fp',
-               binary=True, mode='wb+', close_fd=True, close_fp=False, exc=None,
+        MDMeta(name='binary close_fd not-close_io',
+               binary=True, mode='wb+', close_fd=True, close_io=False, exc=None,
                raises=None),
-        MDMeta(name='binary close_fd close_fp',
-               binary=True, mode='wb+', close_fd=True, close_fp=True, exc=None,
+        MDMeta(name='binary close_fd close_io',
+               binary=True, mode='wb+', close_fd=True, close_io=True, exc=None,
                raises=None),
     ]
 
@@ -332,53 +335,54 @@ class TestFlexIo:
         with pytest.raises(case.exc, **case.raises) \
                 if case.exc else contextlib.nullcontext():
             with case.FlexIoCls(case.fd, mode=case.mode,
-                                close_fp=case.close_fp,
+                                close_io=case.close_io,
                                 closefd=case.close_fd) as io:
                 common_test_flexio(io, case.mode, case.content,
                                    case.w_content, is_fd=True)
 
-            assert io.closed == True
+            assert io.closed == (
+                True if case.close_io is None else case.close_io)
             assert set(io.mode) == refactor_mode_as_open(case.mode)
             assert io.name == case.fd
             assert io.in_mem == False
 
     MMMeta = namedtuple('MetaMakeInMemory',
-                        'init,binary,mode,close_fp,exc,raises,name')
+                        'init,binary,mode,close_io,exc,raises,name')
     cases = [
         # text
         MMMeta(name='write text in-memory',
-               init=True, binary=False, mode='w', close_fp=False, exc=None,
+               init=True, binary=False, mode='w', close_io=False, exc=None,
                raises=None),
         MMMeta(name='write+ text in-memory',
-               init=True, binary=False, mode='w+', close_fp=True, exc=None,
+               init=True, binary=False, mode='w+', close_io=True, exc=None,
                raises=None),
         MMMeta(name='read text in-memory',
-               init=True, binary=False, mode='r', close_fp=True, exc=None,
+               init=True, binary=False, mode='r', close_io=True, exc=None,
                raises=None),
         MMMeta(name='read+ text in-memory',
-               init=True, binary=False, mode='r+', close_fp=False, exc=None,
+               init=True, binary=False, mode='r+', close_io=False, exc=None,
                raises=None),
 
         # binary
         MMMeta(name='read binary in-memory',
-               init=True, binary=True, mode='rb', close_fp=True, exc=None,
+               init=True, binary=True, mode='rb', close_io=True, exc=None,
                raises=None),
         MMMeta(name='read+ binary in-memory',
-               init=True, binary=True, mode='rb+', close_fp=False, exc=None,
+               init=True, binary=True, mode='rb+', close_io=False, exc=None,
                raises=None),
         MMMeta(name='write binary in-memory',
-               init=True, binary=True, mode='wb', close_fp=False, exc=None,
+               init=True, binary=True, mode='wb', close_io=False, exc=None,
                raises=None),
         MMMeta(name='write binary in-memory',
-               init=True, binary=True, mode='wb+', close_fp=True, exc=None,
+               init=True, binary=True, mode='wb+', close_io=True, exc=None,
                raises=None),
 
         # misc with none init
         MMMeta(name='write text in-memory without init',
-               init=None, binary=False, mode='w', close_fp=False, exc=None,
+               init=None, binary=False, mode='w', close_io=False, exc=None,
                raises=None),
         MMMeta(name='read+ binary in-memory without init',
-               init=None, binary=True, mode='rb+', close_fp=False, exc=None,
+               init=None, binary=True, mode='rb+', close_io=False, exc=None,
                raises=None),
     ]
 
@@ -389,7 +393,7 @@ class TestFlexIo:
         with pytest.raises(case.exc, **case.raises) \
                 if case.exc else contextlib.nullcontext():
             with case.FlexIoCls(mode=case.mode, init=case.init,
-                                close_fp=case.close_fp) as io:
+                                close_io=case.close_io) as io:
                 common_test_flexio(io, case.mode, case.content, case.w_content,
                                    unsupported=False)
 
@@ -397,7 +401,7 @@ class TestFlexIo:
             if set('w+') <= set(case.mode):
                 mode = mode | {'+'}
 
-            assert io.closed == case.close_fp
+            assert io.closed == case.close_io
             assert set(io.mode) == mode
             assert io.name is None
             assert io.in_mem == True

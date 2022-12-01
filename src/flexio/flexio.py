@@ -10,13 +10,13 @@ class FlexTextIO(TextIO):
                  mode: str = 'rt', *, init: str | None = None,
                  encoding: str | None = None, errors: str or None = None,
                  newline: Literal['', '\n', '\r', '\r\n'] | None = None,
-                 close_fp: bool = False, **kwargs):
+                 close_io: bool | None = None, **kwargs):
 
         if fp is None:
             name = None
             create = set('w+') <= set(mode)
             io_ = io.StringIO(str() if create else init or str())
-            close_fp = close_fp
+            close_io = False if close_io is None else close_io
             mode = 'w+' if create else 'w'
             in_mem = True
 
@@ -25,19 +25,20 @@ class FlexTextIO(TextIO):
             io_ = open(fp, mode, encoding=encoding, errors=errors,
                        newline=newline, **kwargs)
             name = io_.name
-            close_fp = True
+            close_io = True if close_io is None else close_io
             mode = io_.mode
             in_mem = False
 
         else:
             name = fp.name if hasattr(fp, 'name') else None
             io_ = fp
+            close_io = False if close_io is None else close_io
             mode = fp.mode if hasattr(fp, 'mode') else mode
             in_mem = isinstance(fp, io.StringIO) or (
                 fp.in_mem if hasattr(fp, 'in_mem') else False)
 
         self._io: IO[str] = io_
-        self._close_fp: bool = close_fp
+        self._close_io: bool = close_io
         self._name: str | bytes | None = name
         self._mode = mode
         self._in_mem: bool = in_mem
@@ -46,7 +47,7 @@ class FlexTextIO(TextIO):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self._close_fp:
+        if self._close_io:
             self._io.close()
 
     def __next__(self) -> str:
@@ -141,13 +142,13 @@ class FlexTextIO(TextIO):
 class FlexBinaryIO(BinaryIO):
     def __init__(self, fp: IO[bytes] | StrOrBytesPath | int | None = None,
                  mode: str = 'rb', *, init: bytes | None = None,
-                 close_fp: bool = False, **kwargs):
+                 close_io: bool | None = None, **kwargs):
 
         if fp is None:
             name = None
             create = set('w+') < set(mode)
             io_ = io.BytesIO(bytes() if create else init or bytes())
-            close_fp = close_fp
+            close_io = False if close_io is None else close_io
             mode = 'rb+' if create else 'rb'
             in_mem = True
 
@@ -155,19 +156,20 @@ class FlexBinaryIO(BinaryIO):
             assert 'b' in mode
             io_ = open(fp, mode=mode, **kwargs)
             name = io_.name
-            close_fp = True
+            close_io = True if close_io is None else close_io
             mode = io_.mode
             in_mem = False
 
         else:
             name = fp.name if hasattr(fp, 'name') else None
             io_ = fp
+            close_io = False if close_io is None else close_io
             mode = fp.mode if hasattr(fp, 'mode') else mode
             in_mem = isinstance(fp, io.BytesIO) or (
                 fp.in_mem if hasattr(fp, 'in_mem') else False)
 
         self._io: IO[bytes] = io_
-        self._close_fp: bool = close_fp
+        self._close_io: bool = close_io
         self._name: str | bytes | None = name
         self._mode = mode
         self._in_mem: bool = in_mem
@@ -176,7 +178,7 @@ class FlexBinaryIO(BinaryIO):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self._close_fp:
+        if self._close_io:
             self._io.close()
 
     def __next__(self) -> bytes:
