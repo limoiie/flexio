@@ -1,8 +1,16 @@
+import dataclasses
 import os
 import pathlib
 import tempfile
+from typing import Any, Tuple
 
 import pytest as pytest
+
+
+@dataclasses.dataclass
+class Raises:
+    exc: Any | Tuple[Any]
+    kwargs: dict = dataclasses.field(default_factory=dict)
 
 
 def case_name(case):
