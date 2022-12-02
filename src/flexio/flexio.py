@@ -1,6 +1,6 @@
 import io
 import os
-from typing import Any, BinaryIO, IO, Iterable, Iterator, Literal, TextIO
+from typing import Any, BinaryIO, IO, Iterable, Iterator, TextIO
 
 StrOrBytesPath = str or bytes or os.PathLike[str] or os.PathLike[bytes]
 
@@ -9,8 +9,8 @@ class FlexTextIO(TextIO):
     def __init__(self, fp: IO[str] or StrOrBytesPath or int or None = None,
                  mode: str = 'rt', *, init: str or None = None,
                  encoding: str or None = None, errors: str or None = None,
-                 newline: Literal['', '\n', '\r', '\r\n'] or None = None,
-                 close_io: bool or None = None, **kwargs):
+                 newline: str or None = None, close_io: bool or None = None,
+                 **kwargs):
 
         if fp is None:
             name = None
