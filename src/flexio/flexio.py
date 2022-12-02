@@ -1,6 +1,6 @@
 import io
 import os
-from typing import Any, BinaryIO, IO, Iterable, Iterator, TextIO
+from typing import Any, BinaryIO, IO, Iterable, Iterator, List, TextIO
 
 StrOrBytesPath = str or bytes or os.PathLike[str] or os.PathLike[bytes]
 
@@ -93,7 +93,7 @@ class FlexTextIO(TextIO):
     def readline(self, limit: int = -1) -> str:
         return self._io.readline(limit)
 
-    def readlines(self, hint: int = -1) -> list[str]:
+    def readlines(self, hint: int = -1) -> List[str]:
         return self._io.readlines(hint)
 
     def seek(self, offset: int, whence: int = 0) -> int:
@@ -225,7 +225,7 @@ class FlexBinaryIO(BinaryIO):
     def readline(self, limit: int = -1) -> bytes:
         return self._io.readline(limit)
 
-    def readlines(self, hint: int = -1) -> list[bytes]:
+    def readlines(self, hint: int = -1) -> List[bytes]:
         return self._io.readlines(hint)
 
     def seek(self, offset: int, whence: int = 0) -> int:
