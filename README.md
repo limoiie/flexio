@@ -1,5 +1,7 @@
 # FlexIO
 
+[![AutoSerde unit tests](https://github.com/limoiie/flexio/actions/workflows/python-package.yml/badge.svg?branch=master)](https://github.com/limoiie/flexio/actions?branch=master)
+
 A flexible IO object that wraps path, file or fd.
 
 ## Get started
