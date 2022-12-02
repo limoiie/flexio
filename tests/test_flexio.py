@@ -8,24 +8,24 @@ from typing import Type
 
 import pytest
 
-from flexio.flexio import FlexBinaryIO, FlexTextIO
 from conftest import Raises, case_name
+from flexio.flexio import FlexBinaryIO, FlexTextIO
 
 
 @dataclasses.dataclass
 class Case:
     name: str
-    FlexIoCls: Type[FlexTextIO | FlexBinaryIO]
+    FlexIoCls: Type[FlexTextIO] or Type[FlexBinaryIO]
     binary: bool
-    content: str | bytes
-    w_content: str | bytes
-    path: str | pathlib.Path | None
-    fd: int | None
-    init: str | None
-    mode: str | None
-    close_io: bool | None
-    close_fd: bool | None
-    raises: Raises | None
+    content: str or bytes
+    w_content: str or bytes
+    path: str or pathlib.Path or None
+    fd: int or None
+    init: str or None
+    mode: str or None
+    close_io: bool or None
+    close_fd: bool or None
+    raises: Raises or None
 
 
 @pytest.fixture(scope='function')
