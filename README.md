@@ -1,6 +1,6 @@
 # FlexIO
 
-[![AutoSerde unit tests](https://github.com/limoiie/flexio/actions/workflows/python-package.yml/badge.svg?branch=master)](https://github.com/limoiie/flexio/actions?branch=master)
+[![FlexIO unit tests](https://github.com/limoiie/flexio/actions/workflows/python-package.yml/badge.svg?branch=master)](https://github.com/limoiie/flexio/actions?branch=master)
 
 A flexible IO object that wraps path, file or fd.
 
@@ -11,7 +11,7 @@ A flexible IO object that wraps path, file or fd.
 Open a terminal, and run:
 
 ```shell
-pip install git+https://github.com/limoiie/flexio.git@master
+python -m pip install git+https://github.com/limoiie/flexio.git@master
 ```
 
 ### Introduction
