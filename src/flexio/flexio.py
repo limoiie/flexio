@@ -2,15 +2,15 @@ import io
 import os
 from typing import Any, BinaryIO, IO, Iterable, Iterator, Literal, TextIO
 
-StrOrBytesPath = str | bytes | os.PathLike[str] | os.PathLike[bytes]
+StrOrBytesPath = str or bytes or os.PathLike[str] or os.PathLike[bytes]
 
 
 class FlexTextIO(TextIO):
-    def __init__(self, fp: IO[str] | StrOrBytesPath | int | None = None,
-                 mode: str = 'rt', *, init: str | None = None,
-                 encoding: str | None = None, errors: str or None = None,
-                 newline: Literal['', '\n', '\r', '\r\n'] | None = None,
-                 close_io: bool | None = None, **kwargs):
+    def __init__(self, fp: IO[str] or StrOrBytesPath or int or None = None,
+                 mode: str = 'rt', *, init: str or None = None,
+                 encoding: str or None = None, errors: str or None = None,
+                 newline: Literal['', '\n', '\r', '\r\n'] or None = None,
+                 close_io: bool or None = None, **kwargs):
 
         if fp is None:
             name = None
@@ -39,7 +39,7 @@ class FlexTextIO(TextIO):
 
         self._io: IO[str] = io_
         self._close_io: bool = close_io
-        self._name: str | bytes | None = name
+        self._name: str or bytes or None = name
         self._mode = mode
         self._in_mem: bool = in_mem
 
@@ -81,7 +81,7 @@ class FlexTextIO(TextIO):
         return self._mode
 
     @property
-    def name(self) -> str | int | None:
+    def name(self) -> str or int or None:
         return self._name
 
     def read(self, size: int = -1) -> str:
@@ -105,7 +105,7 @@ class FlexTextIO(TextIO):
     def tell(self) -> int:
         return self._io.tell()
 
-    def truncate(self, pos: int | None = None) -> int:
+    def truncate(self, pos: int or None = None) -> int:
         return self._io.truncate(pos)
 
     def writable(self) -> bool:
@@ -126,7 +126,7 @@ class FlexTextIO(TextIO):
         return self._io.encoding if hasattr(self._io, 'encoding') else None
 
     @property
-    def errors(self) -> str | None:
+    def errors(self) -> str or None:
         return self._io.errors if hasattr(self._io, 'errors') else None
 
     @property
@@ -140,9 +140,9 @@ class FlexTextIO(TextIO):
 
 
 class FlexBinaryIO(BinaryIO):
-    def __init__(self, fp: IO[bytes] | StrOrBytesPath | int | None = None,
-                 mode: str = 'rb', *, init: bytes | None = None,
-                 close_io: bool | None = None, **kwargs):
+    def __init__(self, fp: IO[bytes] or StrOrBytesPath or int or None = None,
+                 mode: str = 'rb', *, init: bytes or None = None,
+                 close_io: bool or None = None, **kwargs):
 
         if fp is None:
             name = None
@@ -170,7 +170,7 @@ class FlexBinaryIO(BinaryIO):
 
         self._io: IO[bytes] = io_
         self._close_io: bool = close_io
-        self._name: str | bytes | None = name
+        self._name: str or bytes or None = name
         self._mode = mode
         self._in_mem: bool = in_mem
 
@@ -212,7 +212,7 @@ class FlexBinaryIO(BinaryIO):
         return self._mode
 
     @property
-    def name(self) -> str | int | None:
+    def name(self) -> str or int or None:
         return str(self._name) \
             if isinstance(self._name, os.PathLike) else self._name
 
@@ -237,7 +237,7 @@ class FlexBinaryIO(BinaryIO):
     def tell(self) -> int:
         return self._io.tell()
 
-    def truncate(self, pos: int | None = None) -> int:
+    def truncate(self, pos: int or None = None) -> int:
         return self._io.truncate(pos)
 
     def writable(self) -> bool:

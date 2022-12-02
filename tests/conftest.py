@@ -9,7 +9,7 @@ import pytest as pytest
 
 @dataclasses.dataclass
 class Raises:
-    exc: Any | Tuple[Any]
+    exc: Any or Tuple[Any, ...]
     kwargs: dict = dataclasses.field(default_factory=dict)
 
 
