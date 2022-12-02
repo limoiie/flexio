@@ -9,7 +9,7 @@ from typing import Type
 import pytest
 
 from flexio.flexio import FlexBinaryIO, FlexTextIO
-from tests.conftest import Raises, case_name
+from conftest import Raises, case_name
 
 
 @dataclasses.dataclass
