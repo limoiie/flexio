@@ -3,7 +3,7 @@ import os
 from typing import Any, BinaryIO, IO, Iterable, Iterator, List, Optional, \
     TextIO, Union
 
-StrOrBytesPath = Union[str, bytes, os.PathLike[str], os.PathLike[bytes]]
+StrOrBytesPath = Union[str, bytes, os.PathLike, os.PathLike]
 FilePointer = Union[IO[str], StrOrBytesPath, int]
 
 
