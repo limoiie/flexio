@@ -4,7 +4,7 @@ import os
 import pathlib
 from collections import namedtuple
 from io import UnsupportedOperation
-from typing import Type
+from typing import Optional, Type, Union
 
 import pytest
 
@@ -15,17 +15,17 @@ from flexio.flexio import FlexBinaryIO, FlexTextIO
 @dataclasses.dataclass
 class Case:
     name: str
-    FlexIoCls: Type[FlexTextIO] or Type[FlexBinaryIO]
+    FlexIoCls: Union[Type[FlexTextIO], Type[FlexBinaryIO]]
     binary: bool
-    content: str or bytes
-    w_content: str or bytes
-    path: str or pathlib.Path or None
-    fd: int or None
-    init: str or None
-    mode: str or None
-    close_io: bool or None
-    close_fd: bool or None
-    raises: Raises or None
+    content: Union[str, bytes]
+    w_content: Union[str, bytes]
+    path: Union[str, pathlib.Path, None]
+    fd: Optional[int]
+    init: Optional[str]
+    mode: Optional[str]
+    close_io: Optional[bool]
+    close_fd: Optional[bool]
+    raises: Optional[Raises]
 
 
 @pytest.fixture(scope='function')

@@ -2,14 +2,14 @@ import dataclasses
 import os
 import pathlib
 import tempfile
-from typing import Any, Tuple
+from typing import Any, Tuple, Union
 
 import pytest as pytest
 
 
 @dataclasses.dataclass
 class Raises:
-    exc: Any or Tuple[Any, ...]
+    exc: Union[Any, Tuple[Any, ...]]
     kwargs: dict = dataclasses.field(default_factory=dict)
 
 
