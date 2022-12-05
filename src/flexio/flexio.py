@@ -12,6 +12,25 @@ class FlexTextIO(TextIO):
                  init: Optional[str] = None, encoding: Optional[str] = None,
                  errors: Optional[str] = None, newline: Optional[str] = None,
                  close_io: Optional[bool] = None, **kwargs):
+        """
+        Wrap a file pointer into a text io-like object.
+
+        The file pointer could either
+        - be a path-like object pointing to a file path; or
+        - be a file-like object that can be read from or writen into; or
+        - be an int value which is the file descriptor; or
+        - be None, which will cause an in-memory io created.
+
+        :param fp: The file pointer.
+        :param mode: The open mode.
+        :param init: If fp is None, this argument will be used to initialize
+          the in-memory io.
+        :param encoding: The open encoding.
+        :param errors: The open errors.
+        :param newline: The open newline.
+        :param close_io: If close the underline io or not before exiting.
+        :param kwargs: The open optionals.
+        """
 
         if fp is None:
             name = None
@@ -144,6 +163,22 @@ class FlexBinaryIO(BinaryIO):
     def __init__(self, fp: Optional[FilePointer] = None, mode: str = 'rb', *,
                  init: Optional[bytes] = None, close_io: Optional[bool] = None,
                  **kwargs):
+        """
+        Wrap a file pointer into a text io-like object.
+
+        The file pointer could either
+        - be a path-like object pointing to a file path; or
+        - be a file-like object that can be read from or writen into; or
+        - be an int value which is the file descriptor; or
+        - be None, which will cause an in-memory io created.
+
+        :param fp: The file pointer.
+        :param mode: The open mode.
+        :param init: If fp is None, this argument will be used to initialize
+          the in-memory io.
+        :param close_io: If close the underline io or not before exiting.
+        :param kwargs: The open optionals.
+        """
 
         if fp is None:
             name = None
