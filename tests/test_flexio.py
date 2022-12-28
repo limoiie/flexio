@@ -223,6 +223,24 @@ class TestFlexIo:
     ]
 
     @pytest.mark.parametrize('real_case', cases, indirect=True, ids=case_name)
+    def test_make_with_io(self, real_case: Case):
+        case = real_case
+
+        with pytest.raises(case.raises.exc, **case.raises.kwargs) \
+                if case.raises else contextlib.nullcontext():
+            with case.path.open(mode=case.mode) as f:
+                with flex_open(f, close_io=case.close_io) as io:
+                    common_test_flexio(io, case.mode, case.content,
+                                       case.w_content)
+
+                assert io.closed == (
+                    False if case.close_io is None else case.close_io)
+                assert set(io.mode) == refactor_mode_as_open(case.mode)
+                assert io.name == str(case.path)
+
+            assert io.closed == True
+
+    @pytest.mark.parametrize('real_case', cases, indirect=True, ids=case_name)
     def test_make_with_path(self, real_case: Case):
         case = real_case
 
