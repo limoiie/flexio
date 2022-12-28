@@ -9,51 +9,52 @@ FPOrBytesIO = Union[FilePointer, IO[bytes]]
 FPOrIO = Union[FilePointer, IO[str], IO[bytes]]
 
 
-def flex_open(fp: Optional[FPOrIO] = None, mode: Optional[str] = None, *,
+def flex_open(f: Optional[FPOrIO] = None, mode: Optional[str] = None, *,
               init: Optional[str] = None, buffering: Optional[int] = -1,
               encoding: Optional[str] = None, newline: Optional[str] = None,
               close_io: Optional[bool] = True, **kwargs):
     """
-    Open given file pointer, and return a file-like object.
+    Open given `f`, and return a file-like object.
 
-    The file pointer could either
+    The arg `f` could either
+    - be a file-like object; or
     - be a path-like object pointing to a file path; or
     - be an int value which is the file descriptor; or
     - be None, in this case, a temporary file shall be created.
 
-    :param fp: The file pointer.
+    :param f: A file-like object, or a file pointer.
     :param mode: The open mode.
-    :param init: Used for initializing the temporary file when fp is None.
+    :param init: Used for initializing the temporary file when f is None.
     :param buffering: The open buffering.
     :param encoding: The open encoding. Only available in text mode.
     :param newline: The open newline. Only available in text mode.
     :param close_io: If close the inner io or not before exiting.
     :param kwargs: Optional open args.
     """
-    if fp is None or is_file_pointer(fp):
+    if f is None or is_file_pointer(f):
         if mode is None:
-            raise ValueError(f'Arg `Mode` should be present when `fp` is None '
+            raise ValueError(f'Arg `Mode` should be present when `f` is None '
                              f'or a file pointer.')
 
         is_binary = 'b' in mode
     else:
         if mode is not None:
-            raise ValueError(f'Arg `Mode` should be absent when `fp` points to '
-                             f'a file-like object.')
+            raise ValueError(f'Arg `Mode` should be absent when `f` is a '
+                             f'file-like object.')
 
-        is_binary = 'b' in fp.mode
+        is_binary = 'b' in f.mode
 
     if is_binary:
-        return FlexBinaryIO(fp=fp, mode=mode, init=init, buffering=buffering,
+        return FlexBinaryIO(f=f, mode=mode, init=init, buffering=buffering,
                             close_io=close_io, **kwargs)
 
-    return FlexTextIO(fp=fp, mode=mode, init=init, buffering=buffering,
+    return FlexTextIO(f=f, mode=mode, init=init, buffering=buffering,
                       encoding=encoding, newline=newline, close_io=close_io,
                       **kwargs)
 
 
 class FlexTextIO(TextIO):
-    def __init__(self, fp: Optional[FPOrStrIO] = None,
+    def __init__(self, f: Optional[FPOrStrIO] = None,
                  mode: Optional[str] = None, *, init: Optional[str] = None,
                  buffering: Optional[int] = -1, encoding: Optional[str] = None,
                  newline: Optional[str] = None, close_io: Optional[bool] = None,
@@ -62,29 +63,29 @@ class FlexTextIO(TextIO):
             raise ValueError(f'FlexTextIO expect text mode, but got binary '
                              f'mode - `{mode}`')
 
-        if fp is None:
+        if f is None:
             mode = mode or 'rt'
             io_ = SpooledTemporaryFile(init=init, mode=mode,
                                        buffering=buffering, encoding=encoding,
                                        newline=newline, **kwargs)
             close_io = True if close_io is None else close_io
 
-        elif is_file_pointer(fp):
+        elif is_file_pointer(f):
             mode = mode or 'rt'
             if init is not None:
-                raise ValueError(f'Arg `init` should be absent when `fp` '
+                raise ValueError(f'Arg `init` should be absent when `f` '
                                  f'points to a file, but got {init}')
 
-            io_ = open(fp, mode=mode, buffering=buffering, encoding=encoding,
+            io_ = open(f, mode=mode, buffering=buffering, encoding=encoding,
                        newline=newline, **kwargs)
             close_io = True if close_io is None else close_io
 
         else:
             if mode is not None:
-                raise ValueError(f'Arg `mode` should be absent when `fp` is '
+                raise ValueError(f'Arg `mode` should be absent when `f` is '
                                  f'a file-like object.')
 
-            io_ = fp
+            io_ = f
             close_io = False if close_io is None else close_io
 
         self._io: IO[str] = io_
@@ -183,7 +184,7 @@ class FlexTextIO(TextIO):
 
 
 class FlexBinaryIO(BinaryIO):
-    def __init__(self, fp: Union[IO[bytes], FilePointer, None] = None,
+    def __init__(self, f: Union[IO[bytes], FilePointer, None] = None,
                  mode: Optional[str] = None, *, init: Optional[bytes] = None,
                  buffering: Optional[int] = -1, close_io: bool = True,
                  **kwargs):
@@ -191,27 +192,27 @@ class FlexBinaryIO(BinaryIO):
             raise ValueError(f'FlexBinaryIO expect binary mode, but got text '
                              f'mode `{mode}`')
 
-        if fp is None:
+        if f is None:
             mode = mode or 'rb'
             io_ = SpooledTemporaryFile(init=init, mode=mode,
                                        buffering=buffering, **kwargs)
             close_io = True if close_io is None else close_io
 
-        elif is_file_pointer(fp):
+        elif is_file_pointer(f):
             mode = mode or 'rb'
             if init is not None:
-                raise ValueError(f'Arg `init` should be absent when `fp` '
+                raise ValueError(f'Arg `init` should be absent when `f` '
                                  f'points to a file, but got {init}')
 
-            io_ = open(fp, mode=mode, buffering=buffering, **kwargs)
+            io_ = open(f, mode=mode, buffering=buffering, **kwargs)
             close_io = True if close_io is None else close_io
 
         else:
             if mode is not None:
-                raise ValueError(f'Arg `mode` should be absent when `fp` is '
+                raise ValueError(f'Arg `mode` should be absent when `f` is '
                                  f'a file-like object.')
 
-            io_ = fp
+            io_ = f
             close_io = False if close_io is None else close_io
 
         self._io: IO[bytes] = io_
