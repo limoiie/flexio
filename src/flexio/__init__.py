@@ -1,4 +1,4 @@
-__all__ = ['FlexBinaryIO', 'FlexTextIO', 'FilePointer', 'flex_open']
+__all__ = ['FilePointer', 'flex_open']
 
 try:
     import importlib.metadata as _importlib_metadata
@@ -11,4 +11,4 @@ try:
 except _importlib_metadata.PackageNotFoundError:
     __version__ = "unknown version"
 
-from .flexio import FilePointer, FlexBinaryIO, FlexTextIO, flex_open
+from .flexio import FilePointer, flex_open
