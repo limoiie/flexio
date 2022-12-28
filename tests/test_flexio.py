@@ -4,18 +4,17 @@ import os
 import pathlib
 from collections import namedtuple
 from io import UnsupportedOperation
-from typing import Optional, Type, Union
+from typing import Optional, Union
 
 import pytest
 
 from conftest import Raises, case_name
-from flexio.flexio import FlexBinaryIO, FlexTextIO
+from flexio.flexio import flex_open
 
 
 @dataclasses.dataclass
 class Case:
     name: str
-    FlexIoCls: Union[Type[FlexTextIO], Type[FlexBinaryIO]]
     binary: bool
     content: Union[str, bytes]
     w_content: Union[str, bytes]
@@ -31,7 +30,6 @@ class Case:
 @pytest.fixture(scope='function')
 def real_case(request, fake_local_file, faker):
     meta: 'TestFlexIo.MRMeta' = request.param
-    FlexIoCls = FlexBinaryIO if 'b' in meta.mode else FlexTextIO
     content = fake_local_file.read_text()
     written_content = faker.text()
 
@@ -46,7 +44,6 @@ def real_case(request, fake_local_file, faker):
 
     return Case(
         name=meta.name,
-        FlexIoCls=FlexIoCls,
         binary=meta.binary,
         content=content,
         w_content=written_content,
@@ -63,7 +60,6 @@ def real_case(request, fake_local_file, faker):
 @pytest.fixture(scope='function')
 def path_case(request, fake_local_file, faker):
     meta: 'TestFlexIo.MPMeta' = request.param
-    FlexIoCls = FlexBinaryIO if 'b' in meta.mode else FlexTextIO
     content = fake_local_file.read_text()
     written_content = faker.text()
 
@@ -75,7 +71,6 @@ def path_case(request, fake_local_file, faker):
 
     return Case(
         name=meta.name,
-        FlexIoCls=FlexIoCls,
         binary=meta.binary,
         content=content,
         w_content=written_content,
@@ -92,7 +87,6 @@ def path_case(request, fake_local_file, faker):
 @pytest.fixture(scope='function')
 def mem_case(request, faker):
     meta: 'TestFlexIo.MMMeta' = request.param
-    FlexIoCls = FlexBinaryIO if 'b' in meta.mode else FlexTextIO
     init = faker.text() if meta.init else None
     content = init or str()
     written_content = faker.text()
@@ -104,7 +98,6 @@ def mem_case(request, faker):
 
     return Case(
         name=meta.name,
-        FlexIoCls=FlexIoCls,
         binary=meta.binary,
         content=content,
         w_content=written_content,
@@ -121,7 +114,6 @@ def mem_case(request, faker):
 @pytest.fixture(scope='function')
 def fd_case(request, fake_local_file, faker):
     meta: 'TestFlexIo.MDMeta' = request.param
-    FlexIoCls = FlexBinaryIO if 'b' in meta.mode else FlexTextIO
     content = fake_local_file.read_text()
     written_content = faker.text()
 
@@ -135,7 +127,6 @@ def fd_case(request, fake_local_file, faker):
     try:
         yield Case(
             name=meta.name,
-            FlexIoCls=FlexIoCls,
             binary=meta.binary,
             content=content,
             w_content=written_content,
@@ -232,32 +223,13 @@ class TestFlexIo:
     ]
 
     @pytest.mark.parametrize('real_case', cases, indirect=True, ids=case_name)
-    def test_make_with_io(self, real_case: Case):
-        case = real_case
-
-        with pytest.raises(case.raises.exc, **case.raises.kwargs) \
-                if case.raises else contextlib.nullcontext():
-            with case.path.open(mode=case.mode) as f:
-                with case.FlexIoCls(f, close_io=case.close_io) as io:
-                    common_test_flexio(io, case.mode, case.content,
-                                       case.w_content)
-
-                assert io.closed == (
-                    False if case.close_io is None else case.close_io)
-                assert set(io.mode) == refactor_mode_as_open(case.mode)
-                assert io.name == str(case.path)
-                assert io.in_mem == False
-
-            assert io.closed == True
-
-    @pytest.mark.parametrize('real_case', cases, indirect=True, ids=case_name)
     def test_make_with_path(self, real_case: Case):
         case = real_case
 
         with pytest.raises(case.raises.exc, **case.raises.kwargs) \
                 if case.raises else contextlib.nullcontext():
-            with case.FlexIoCls(case.path, mode=case.mode,
-                                close_io=case.close_io) as io:
+            with flex_open(case.path, mode=case.mode,
+                           close_io=case.close_io) as io:
                 common_test_flexio(io, case.mode, case.content, case.w_content)
 
             assert io.closed == (
@@ -298,8 +270,8 @@ class TestFlexIo:
 
         with pytest.raises(case.raises.exc, **case.raises.kwargs) \
                 if case.raises else contextlib.nullcontext():
-            with case.FlexIoCls(case.path, mode=case.mode,
-                                close_io=case.close_io) as io:
+            with flex_open(case.path, mode=case.mode,
+                           close_io=case.close_io) as io:
                 common_test_flexio(io, case.mode, case.content, case.w_content)
 
             assert io.closed == (
@@ -340,11 +312,9 @@ class TestFlexIo:
 
         with pytest.raises(case.raises.exc, **case.raises.kwargs) \
                 if case.raises else contextlib.nullcontext():
-            with case.FlexIoCls(case.fd, mode=case.mode,
-                                close_io=case.close_io,
-                                closefd=case.close_fd) as io:
-                common_test_flexio(io, case.mode, case.content,
-                                   case.w_content, is_fd=True)
+            with flex_open(case.fd, mode=case.mode, close_io=case.close_io,
+                           closefd=case.close_fd) as io:
+                common_test_flexio(io, case.mode, case.content, case.w_content)
 
             assert io.closed == (
                 True if case.close_io is None else case.close_io)
@@ -398,23 +368,18 @@ class TestFlexIo:
 
         with pytest.raises(case.raises.exc, **case.raises.kwargs) \
                 if case.raises else contextlib.nullcontext():
-            with case.FlexIoCls(mode=case.mode, init=case.init,
-                                close_io=case.close_io) as io:
+            with flex_open(mode=case.mode, init=case.init,
+                           close_io=case.close_io) as io:
                 common_test_flexio(io, case.mode, case.content, case.w_content,
                                    unsupported=False)
 
-            mode = set('rb' if case.binary else 'w')
-            if set('w+') <= set(case.mode):
-                mode = mode | {'+'}
-
             assert io.closed == case.close_io
-            assert set(io.mode) == mode
+            assert set(io.mode) == set(case.mode)
             assert io.name is None
             assert io.in_mem == True
 
 
-def common_test_flexio(io, mode, content, written_content, unsupported=True,
-                       is_fd=False):
+def common_test_flexio(io, mode, content, written_content, unsupported=True):
     if 'r' in mode and '+' not in mode:
         assert io.read() == content
 
@@ -435,10 +400,6 @@ def common_test_flexio(io, mode, content, written_content, unsupported=True,
         assert io.write(written_content) == len(written_content)
 
     elif 'w' in mode and '+' in mode:
-        # w+ will truncate file to zero
-        if not is_fd:
-            assert io.read() in ('', b'')
-
         assert io.write(written_content) == len(written_content)
 
 
@@ -446,7 +407,6 @@ def refactor_mode_as_open(mode):
     mode = set(mode)
     if set('wb+') <= mode:
         # open will rewrite 'wb+' as 'rb+'
-        mode = mode - {'w'}
-        mode = mode | {'r'}
+        mode = mode - {'w'} | {'r'}
 
     return mode
