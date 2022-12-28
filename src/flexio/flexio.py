@@ -23,7 +23,8 @@ def flex_open(f: Optional[FPOrIO] = None, mode: Optional[str] = None, *,
     - be None, in this case, a temporary file shall be created.
 
     :param f: A file-like object, or a file pointer.
-    :param mode: The open mode.
+    :param mode: The open mode. Default as 'rb' if `f` is a file pointer;
+      otherwise, overwritten by `f.mode`.
     :param init: Used for initializing the temporary file when f is None.
     :param buffering: The open buffering.
     :param encoding: The open encoding. Only available in text mode.
@@ -32,17 +33,10 @@ def flex_open(f: Optional[FPOrIO] = None, mode: Optional[str] = None, *,
     :param kwargs: Optional open args.
     """
     if f is None or is_file_pointer(f):
-        if mode is None:
-            raise ValueError(f'Arg `Mode` should be present when `f` is None '
-                             f'or a file pointer.')
-
-        is_binary = 'b' in mode
+        is_binary = 'b' in mode if mode else True
     else:
-        if mode is not None:
-            raise ValueError(f'Arg `Mode` should be absent when `f` is a '
-                             f'file-like object.')
-
-        is_binary = 'b' in f.mode
+        f_mode = getattr(f, 'mode')
+        is_binary = 'b' in f_mode
 
     if is_binary:
         return FlexBinaryIO(f=f, mode=mode, init=init, buffering=buffering,
@@ -81,9 +75,10 @@ class FlexTextIO(TextIO):
             close_io = True if close_io is None else close_io
 
         else:
-            if mode is not None:
-                raise ValueError(f'Arg `mode` should be absent when `f` is '
-                                 f'a file-like object.')
+            f_mode = getattr(f, 'mode')
+            if mode and cover_wre(f_mode, mode):
+                raise ValueError(f'Inconsistent open mode: `f` was opened in '
+                                 f'mode `{f_mode}`, but given mode `{mode}`')
 
             io_ = f
             close_io = False if close_io is None else close_io
@@ -208,9 +203,10 @@ class FlexBinaryIO(BinaryIO):
             close_io = True if close_io is None else close_io
 
         else:
-            if mode is not None:
-                raise ValueError(f'Arg `mode` should be absent when `f` is '
-                                 f'a file-like object.')
+            f_mode = getattr(f, 'mode')
+            if mode and cover_wre(f_mode, mode):
+                raise ValueError(f'Inconsistent open mode: `f` was opened in '
+                                 f'mode `{f_mode}`, but given mode `{mode}`')
 
             io_ = f
             close_io = False if close_io is None else close_io
@@ -302,3 +298,24 @@ class SpooledTemporaryFile(tempfile.SpooledTemporaryFile):
 
 def is_file_pointer(obj: Any) -> bool:
     return isinstance(obj, (str, bytes, os.PathLike, int))
+
+
+def cover_wre(l_mode: str, r_mode: str):
+    lv = compute_wre(l_mode)
+    rv = compute_wre(r_mode)
+    return (lv & rv) == rv
+
+
+def compute_wre(mode: str):
+    value = 0
+
+    if '+' in mode or 'r' in mode:
+        value += 0b1
+
+    if '+' in mode or 'w' in mode or 'a' in mode:
+        value += 0b10
+
+    if 'b' in mode:
+        value += 0b100
+
+    return value
