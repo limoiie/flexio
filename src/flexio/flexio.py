@@ -4,12 +4,15 @@ from typing import Any, BinaryIO, IO, Iterable, Iterator, List, Optional, \
     TextIO, Union
 
 FilePointer = Union[str, bytes, os.PathLike, int]
+FPOrStrIO = Union[FilePointer, IO[str]]
+FPOrBytesIO = Union[FilePointer, IO[bytes]]
+FPOrIO = Union[FilePointer, IO[str], IO[bytes]]
 
 
-def flex_open(fp: Optional[FilePointer] = None, mode: str = 'rt', *,
+def flex_open(fp: Optional[FPOrIO] = None, mode: Optional[str] = None, *,
               init: Optional[str] = None, buffering: Optional[int] = -1,
               encoding: Optional[str] = None, newline: Optional[str] = None,
-              close_io: bool = True, **kwargs):
+              close_io: Optional[bool] = True, **kwargs):
     """
     Open given file pointer, and return a file-like object.
 
@@ -27,8 +30,20 @@ def flex_open(fp: Optional[FilePointer] = None, mode: str = 'rt', *,
     :param close_io: If close the inner io or not before exiting.
     :param kwargs: Optional open args.
     """
+    if fp is None or is_file_pointer(fp):
+        if mode is None:
+            raise ValueError(f'Arg `Mode` should be present when `fp` is None '
+                             f'or a file pointer.')
 
-    if 'b' in mode:
+        is_binary = 'b' in mode
+    else:
+        if mode is not None:
+            raise ValueError(f'Arg `Mode` should be absent when `fp` points to '
+                             f'a file-like object.')
+
+        is_binary = 'b' in fp.mode
+
+    if is_binary:
         return FlexBinaryIO(fp=fp, mode=mode, init=init, buffering=buffering,
                             close_io=close_io, **kwargs)
 
@@ -38,32 +53,42 @@ def flex_open(fp: Optional[FilePointer] = None, mode: str = 'rt', *,
 
 
 class FlexTextIO(TextIO):
-    def __init__(self, fp: Optional[FilePointer] = None, mode: str = 'rt',
-                 *, init: Optional[str] = None, buffering: Optional[int] = -1,
-                 encoding: Optional[str] = None, newline: Optional[str] = None,
-                 close_io: bool = True, **kwargs):
-
-        if 'b' in mode:
-            raise ValueError(
-                f'FlexTextIO expect text mode, but got binary mode {mode}')
+    def __init__(self, fp: Optional[FPOrStrIO] = None,
+                 mode: Optional[str] = None, *, init: Optional[str] = None,
+                 buffering: Optional[int] = -1, encoding: Optional[str] = None,
+                 newline: Optional[str] = None, close_io: Optional[bool] = None,
+                 **kwargs):
+        if mode and 'b' in mode:
+            raise ValueError(f'FlexTextIO expect text mode, but got binary '
+                             f'mode - `{mode}`')
 
         if fp is None:
+            mode = mode or 'rt'
             io_ = SpooledTemporaryFile(init=init, mode=mode,
                                        buffering=buffering, encoding=encoding,
                                        newline=newline, **kwargs)
+            close_io = True if close_io is None else close_io
 
-        else:
-            assert isinstance(fp, (os.PathLike, str, bytes, int))
+        elif is_file_pointer(fp):
+            mode = mode or 'rt'
             if init is not None:
                 raise ValueError(f'Arg `init` should be absent when `fp` '
                                  f'points to a file, but got {init}')
 
-            io_ = open(fp, mode, buffering=buffering, encoding=encoding,
+            io_ = open(fp, mode=mode, buffering=buffering, encoding=encoding,
                        newline=newline, **kwargs)
+            close_io = True if close_io is None else close_io
+
+        else:
+            if mode is not None:
+                raise ValueError(f'Arg `mode` should be absent when `fp` is '
+                                 f'a file-like object.')
+
+            io_ = fp
+            close_io = False if close_io is None else close_io
 
         self._io: IO[str] = io_
         self._close_io: bool = close_io
-        self._in_mem: bool = fp is None
 
     def __enter__(self) -> 'FlexTextIO':
         return self
@@ -77,10 +102,6 @@ class FlexTextIO(TextIO):
 
     def __iter__(self) -> Iterator[str]:
         return self._io.__iter__()
-
-    @property
-    def in_mem(self):
-        return self._in_mem
 
     def close(self) -> None:
         self._io.close()
@@ -162,31 +183,39 @@ class FlexTextIO(TextIO):
 
 
 class FlexBinaryIO(BinaryIO):
-    def __init__(self, fp: Optional[FilePointer] = None, mode: str = 'rb',
-                 *, init: Optional[bytes] = None, buffering: Optional[int] = -1,
-                 close_io: bool = True, **kwargs):
-        if 'b' not in mode:
-            raise ValueError(
-                f'FlexBinaryIO expect binary mode, but got text mode {mode}')
+    def __init__(self, fp: Union[IO[bytes], FilePointer, None] = None,
+                 mode: Optional[str] = None, *, init: Optional[bytes] = None,
+                 buffering: Optional[int] = -1, close_io: bool = True,
+                 **kwargs):
+        if mode and 'b' not in mode:
+            raise ValueError(f'FlexBinaryIO expect binary mode, but got text '
+                             f'mode `{mode}`')
 
         if fp is None:
+            mode = mode or 'rb'
             io_ = SpooledTemporaryFile(init=init, mode=mode,
                                        buffering=buffering, **kwargs)
+            close_io = True if close_io is None else close_io
 
-        else:
-            if not isinstance(fp, (os.PathLike, str, bytes, int)):
-                raise ValueError(f'Arg `fp` should be an instance of '
-                                 f'os.PathLike, str, bytes, int, or None')
-
+        elif is_file_pointer(fp):
+            mode = mode or 'rb'
             if init is not None:
                 raise ValueError(f'Arg `init` should be absent when `fp` '
                                  f'points to a file, but got {init}')
 
             io_ = open(fp, mode=mode, buffering=buffering, **kwargs)
+            close_io = True if close_io is None else close_io
+
+        else:
+            if mode is not None:
+                raise ValueError(f'Arg `mode` should be absent when `fp` is '
+                                 f'a file-like object.')
+
+            io_ = fp
+            close_io = False if close_io is None else close_io
 
         self._io: IO[bytes] = io_
         self._close_io: bool = close_io
-        self._in_mem: bool = fp is None
 
     def __enter__(self) -> 'FlexBinaryIO':
         return self
@@ -200,10 +229,6 @@ class FlexBinaryIO(BinaryIO):
 
     def __iter__(self) -> Iterator[bytes]:
         return self._io.__iter__()
-
-    @property
-    def in_mem(self):
-        return self._in_mem
 
     def close(self) -> None:
         self._io.close()
@@ -272,3 +297,7 @@ class SpooledTemporaryFile(tempfile.SpooledTemporaryFile):
         if init:
             self._file.write(init)
             self._file.seek(0)
+
+
+def is_file_pointer(obj: Any) -> bool:
+    return isinstance(obj, (str, bytes, os.PathLike, int))

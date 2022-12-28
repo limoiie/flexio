@@ -236,7 +236,6 @@ class TestFlexIo:
                 True if case.close_io is None else case.close_io)
             assert set(io.mode) == refactor_mode_as_open(case.mode)
             assert io.name == str(case.path)
-            assert io.in_mem == False
 
     MPMeta = namedtuple('MetaMakeVariousPath',
                         'path_cls,binary,mode,close_io,raises,name')
@@ -278,7 +277,6 @@ class TestFlexIo:
                 True if case.close_io is None else case.close_io)
             assert set(io.mode) == refactor_mode_as_open(case.mode)
             assert str(io.name) == str(case.path)
-            assert io.in_mem == False
 
     MDMeta = namedtuple('MetaMakeFd',
                         'binary,mode,close_fd,close_io,raises,name')
@@ -320,7 +318,6 @@ class TestFlexIo:
                 True if case.close_io is None else case.close_io)
             assert set(io.mode) == refactor_mode_as_open(case.mode)
             assert io.name == case.fd
-            assert io.in_mem == False
 
     MMMeta = namedtuple('MetaMakeInMemory',
                         'init,binary,mode,close_io,raises,name')
@@ -376,7 +373,6 @@ class TestFlexIo:
             assert io.closed == case.close_io
             assert set(io.mode) == set(case.mode)
             assert io.name is None
-            assert io.in_mem == True
 
 
 def common_test_flexio(io, mode, content, written_content, unsupported=True):
