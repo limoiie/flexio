@@ -76,7 +76,7 @@ class FlexTextIO(TextIO):
 
         else:
             f_mode = getattr(f, 'mode')
-            if mode and cover_wre(f_mode, mode):
+            if mode and not cover_wre(f_mode, mode):
                 raise ValueError(f'Inconsistent open mode: `f` was opened in '
                                  f'mode `{f_mode}`, but given mode `{mode}`')
 
@@ -204,7 +204,7 @@ class FlexBinaryIO(BinaryIO):
 
         else:
             f_mode = getattr(f, 'mode')
-            if mode and cover_wre(f_mode, mode):
+            if mode and not cover_wre(f_mode, mode):
                 raise ValueError(f'Inconsistent open mode: `f` was opened in '
                                  f'mode `{f_mode}`, but given mode `{mode}`')
 
