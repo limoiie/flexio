@@ -8,8 +8,8 @@ FilePointer = Union[str, bytes, os.PathLike, int]
 
 def flex_open(fp: Optional[FilePointer] = None, mode: str = 'rt', *,
               init: Optional[str] = None, buffering: Optional[int] = -1,
-              encoding: Optional[str] = None, errors: Optional[str] = None,
-              newline: Optional[str] = None, close_io: bool = True, **kwargs):
+              encoding: Optional[str] = None, newline: Optional[str] = None,
+              close_io: bool = True, **kwargs):
     """
     Open given file pointer, and return a file-like object.
 
@@ -23,7 +23,6 @@ def flex_open(fp: Optional[FilePointer] = None, mode: str = 'rt', *,
     :param init: Used for initializing the temporary file when fp is None.
     :param buffering: The open buffering.
     :param encoding: The open encoding. Only available in text mode.
-    :param errors: The open errors. Only available in text mode.
     :param newline: The open newline. Only available in text mode.
     :param close_io: If close the inner io or not before exiting.
     :param kwargs: Optional open args.
@@ -34,16 +33,15 @@ def flex_open(fp: Optional[FilePointer] = None, mode: str = 'rt', *,
                             close_io=close_io, **kwargs)
 
     return FlexTextIO(fp=fp, mode=mode, init=init, buffering=buffering,
-                      encoding=encoding, errors=errors, newline=newline,
-                      close_io=close_io, **kwargs)
+                      encoding=encoding, newline=newline, close_io=close_io,
+                      **kwargs)
 
 
 class FlexTextIO(TextIO):
     def __init__(self, fp: Optional[FilePointer] = None, mode: str = 'rt',
                  *, init: Optional[str] = None, buffering: Optional[int] = -1,
-                 encoding: Optional[str] = None, errors: Optional[str] = None,
-                 newline: Optional[str] = None, close_io: bool = True,
-                 **kwargs):
+                 encoding: Optional[str] = None, newline: Optional[str] = None,
+                 close_io: bool = True, **kwargs):
 
         if 'b' in mode:
             raise ValueError(
@@ -52,7 +50,7 @@ class FlexTextIO(TextIO):
         if fp is None:
             io_ = SpooledTemporaryFile(init=init, mode=mode,
                                        buffering=buffering, encoding=encoding,
-                                       errors=errors, newline=newline, **kwargs)
+                                       newline=newline, **kwargs)
 
         else:
             assert isinstance(fp, (os.PathLike, str, bytes, int))
@@ -61,7 +59,7 @@ class FlexTextIO(TextIO):
                                  f'points to a file, but got {init}')
 
             io_ = open(fp, mode, buffering=buffering, encoding=encoding,
-                       errors=errors, newline=newline, **kwargs)
+                       newline=newline, **kwargs)
 
         self._io: IO[str] = io_
         self._close_io: bool = close_io
@@ -268,12 +266,8 @@ class FlexBinaryIO(BinaryIO):
 class SpooledTemporaryFile(tempfile.SpooledTemporaryFile):
     # noinspection PyShadowingBuiltins
     # noinspection PyUnresolvedReferences
-    def __init__(self, init: Union[str, bytes, None], max_size=0, mode='w+b',
-                 buffering=-1, encoding=None, newline=None, suffix=None,
-                 prefix=None, dir=None, *, errors=None):
-        super().__init__(max_size=max_size, mode=mode, buffering=buffering,
-                         encoding=encoding, newline=newline, suffix=suffix,
-                         prefix=prefix, dir=dir, errors=errors)
+    def __init__(self, init: Union[str, bytes, None], **kwargs):
+        super().__init__(**kwargs)
 
         if init:
             self._file.write(init)
