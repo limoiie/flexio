@@ -3,8 +3,8 @@ import dataclasses
 import os
 import pathlib
 from collections import namedtuple
-from io import UnsupportedOperation
-from typing import Optional, Union
+from io import BytesIO, StringIO, UnsupportedOperation
+from typing import AnyStr, Optional, Union
 
 import pytest
 
@@ -215,7 +215,8 @@ class TestFlexIo:
         # incorrect usages
         MRMeta(name='write bytes to text io',
                exists=True, binary=True, mode='w', close_io=False,
-               raises=Raises(exc=TypeError, kwargs=dict(match='must be str'))),
+               raises=Raises(exc=TypeError,
+                             kwargs=dict(match='(must be )?str'))),
         MRMeta(name='write text to bytes io',
                exists=True, binary=False, mode='wb', close_io=False,
                raises=Raises(exc=TypeError, kwargs=dict(
@@ -223,7 +224,7 @@ class TestFlexIo:
     ]
 
     @pytest.mark.parametrize('real_case', cases, indirect=True, ids=case_name)
-    def test_make_with_io(self, real_case: Case):
+    def test_make_with_file_io(self, real_case: Case):
         case = real_case
 
         with pytest.raises(case.raises.exc, **case.raises.kwargs) \
@@ -237,6 +238,33 @@ class TestFlexIo:
                     False if case.close_io is None else case.close_io)
                 assert set(io.mode) == refactor_mode_as_open(case.mode)
                 assert io.name == str(case.path)
+
+            assert io.closed == True
+
+    @pytest.mark.parametrize('real_case', cases, indirect=True, ids=case_name)
+    def test_make_with_in_memory_io(self, real_case: Case):
+        case = real_case
+
+        with pytest.raises(case.raises.exc, **case.raises.kwargs) \
+                if case.raises else contextlib.nullcontext():
+            binary_io = 'b' in case.mode
+
+            if 'r' in case.mode:
+                with open(case.path, mode='rb' if binary_io else 'r') as f:
+                    data: AnyStr = f.read()
+            else:
+                data = b'' if binary_io else ''
+
+            with BytesIO(data) if binary_io else StringIO(data) as in_memory:
+                with flex_open(in_memory, mode=case.mode,
+                               close_io=case.close_io) as io:
+                    common_test_flexio(io, case.mode, case.content,
+                                       case.w_content, unsupported=False)
+
+                assert io.closed == (
+                    False if case.close_io is None else case.close_io)
+                assert set(io.mode) == set(case.mode)
+                assert io.name is None
 
             assert io.closed == True
 

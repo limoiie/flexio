@@ -1,3 +1,4 @@
+import io
 import os
 import tempfile
 from typing import Any, BinaryIO, IO, Iterable, Iterator, List, Optional, \
@@ -24,7 +25,10 @@ def flex_open(f: Optional[FPOrIO] = None, mode: Optional[str] = None, *,
 
     :param f: A file-like object, or a file pointer.
     :param mode: The open mode. Default as 'rb' if `f` is a file pointer;
-      otherwise, overwritten by `f.mode`.
+      otherwise, overwritten by `f.mode` if `f` does have. When `f` is in-memory
+      file-like object, it has no such attribute named mode. In that case, the
+      mode is defaulted as 'rb' or 'rt' according to whether `f` is BytesIO or
+      StringIO.
     :param init: Used for initializing the temporary file when f is None.
     :param buffering: The open buffering.
     :param encoding: The open encoding. Only available in text mode.
@@ -35,8 +39,8 @@ def flex_open(f: Optional[FPOrIO] = None, mode: Optional[str] = None, *,
     if f is None or is_file_pointer(f):
         is_binary = 'b' in mode if mode else True
     else:
-        f_mode = getattr(f, 'mode')
-        is_binary = 'b' in f_mode
+        is_binary = 'b' in f.mode if hasattr(f, 'mode') else \
+            not isinstance(f, io.StringIO)  # only in-memory IO has no mode
 
     if is_binary:
         return FlexBinaryIO(f=f, mode=mode, init=init, buffering=buffering,
@@ -63,6 +67,7 @@ class FlexTextIO(TextIO):
                                        buffering=buffering, encoding=encoding,
                                        newline=newline, **kwargs)
             close_io = True if close_io is None else close_io
+            mode = None
 
         elif is_file_pointer(f):
             mode = mode or 'rt'
@@ -73,18 +78,26 @@ class FlexTextIO(TextIO):
             io_ = open(f, mode=mode, buffering=buffering, encoding=encoding,
                        newline=newline, **kwargs)
             close_io = True if close_io is None else close_io
+            mode = None
 
         else:
-            f_mode = getattr(f, 'mode')
-            if mode and not cover_wre(f_mode, mode):
+            f_mode = getattr(f, 'mode', None)
+            has_mode = f_mode is not None
+
+            if not has_mode:
+                mode = mode or 'rt'
+
+            if f_mode and mode and not cover_wre(f_mode, mode):
                 raise ValueError(f'Inconsistent open mode: `f` was opened in '
                                  f'mode `{f_mode}`, but given mode `{mode}`')
 
             io_ = f
             close_io = False if close_io is None else close_io
+            mode = None if has_mode else mode
 
         self._io: IO[str] = io_
         self._close_io: bool = close_io
+        self._mode: Optional[str] = mode
 
     def __enter__(self) -> 'FlexTextIO':
         return self
@@ -117,11 +130,11 @@ class FlexTextIO(TextIO):
 
     @property
     def mode(self) -> str:
-        return self._io.mode
+        return self._mode or self._io.mode
 
     @property
     def name(self) -> Union[str, int, None]:
-        return self._io.name
+        return getattr(self._io, 'name', None)
 
     def read(self, size: int = -1) -> str:
         return self._io.read(size)
@@ -192,6 +205,7 @@ class FlexBinaryIO(BinaryIO):
             io_ = SpooledTemporaryFile(init=init, mode=mode,
                                        buffering=buffering, **kwargs)
             close_io = True if close_io is None else close_io
+            mode = None
 
         elif is_file_pointer(f):
             mode = mode or 'rb'
@@ -201,18 +215,26 @@ class FlexBinaryIO(BinaryIO):
 
             io_ = open(f, mode=mode, buffering=buffering, **kwargs)
             close_io = True if close_io is None else close_io
+            mode = None
 
         else:
-            f_mode = getattr(f, 'mode')
-            if mode and not cover_wre(f_mode, mode):
+            f_mode = getattr(f, 'mode', None)
+            has_mode = f_mode is not None
+
+            if not has_mode:
+                mode = mode or 'rb'
+
+            if f_mode and mode and not cover_wre(f_mode, mode):
                 raise ValueError(f'Inconsistent open mode: `f` was opened in '
                                  f'mode `{f_mode}`, but given mode `{mode}`')
 
             io_ = f
             close_io = False if close_io is None else close_io
+            mode = None if has_mode else mode
 
         self._io: IO[bytes] = io_
         self._close_io: bool = close_io
+        self._mode: Optional[str] = mode
 
     def __enter__(self) -> 'FlexBinaryIO':
         return self
@@ -245,11 +267,11 @@ class FlexBinaryIO(BinaryIO):
 
     @property
     def mode(self) -> str:
-        return self._io.mode
+        return self._mode or self._io.mode
 
     @property
     def name(self) -> Union[str, int, None]:
-        return self._io.name
+        return getattr(self._io, 'name', None)
 
     def read(self, size: int = -1) -> bytes:
         return self._io.read(size)
