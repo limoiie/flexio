@@ -13,7 +13,7 @@ FPOrIO = Union[FilePointer, IO[str], IO[bytes]]
 def flex_open(f: Optional[FPOrIO] = None, mode: Optional[str] = None, *,
               init: Optional[str] = None, buffering: Optional[int] = -1,
               encoding: Optional[str] = None, newline: Optional[str] = None,
-              close_io: Optional[bool] = True, **kwargs):
+              close_io: Optional[bool] = None, **kwargs):
     """
     Open given `f`, and return a file-like object.
 
@@ -33,7 +33,9 @@ def flex_open(f: Optional[FPOrIO] = None, mode: Optional[str] = None, *,
     :param buffering: The open buffering.
     :param encoding: The open encoding. Only available in text mode.
     :param newline: The open newline. Only available in text mode.
-    :param close_io: If close the inner io or not before exiting.
+    :param close_io: If close the inner io or not before exiting. Default as
+      None, which becomes True if the inner io is created inside this function
+      else False.
     :param kwargs: Optional open args.
     """
     if f is None or is_file_pointer(f):
@@ -194,7 +196,7 @@ class FlexTextIO(TextIO):
 class FlexBinaryIO(BinaryIO):
     def __init__(self, f: Union[IO[bytes], FilePointer, None] = None,
                  mode: Optional[str] = None, *, init: Optional[bytes] = None,
-                 buffering: Optional[int] = -1, close_io: bool = True,
+                 buffering: Optional[int] = -1, close_io: Optional[bool] = None,
                  **kwargs):
         if mode and 'b' not in mode:
             raise ValueError(f'FlexBinaryIO expect binary mode, but got text '
